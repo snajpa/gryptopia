@@ -24,7 +24,7 @@ func main() {
 	var respExist struct { Exists bool}
 	var newHistory []CryptopiaMarketLog
 
-	
+
 	tbegin = time.Now()
 
 	db := pg.Connect(&pg.Options{
@@ -58,12 +58,14 @@ func main() {
 
 	kkt("Traverse Markets and Update Histories")
 	uniqMarkets, err := DBGetUniqMarkets(db)
+	fmt.Printf("uniqMarkets pyco <%v>\n", uniqMarkets)
+
 
 	for _, ticker := range uniqMarkets {
 		kkt("CryptopiaGetMarketHistoryData("+ticker.Label+")")
 		historyData, _, _ := CryptopiaGetMarketHistoryData(ticker.Label)
-		kkt("DBInsertMarketHistory()")
-		DBInsertMarketHistory(db, &historyData)
+		fmt.Printf("CryptopiaGetMarketHistoryData pyco <%v>\n", historyData)
+
 	}
 
 	fmt.Printf("Time to completion: %s\n", time.Since(tbegin))

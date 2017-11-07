@@ -17,8 +17,8 @@ func DBcreateSchema(db *pg.DB) error {
 		}
 	}
 
-	db.QueryOne(&respHT, "SELECT create_hypertable('cryptopia_market_logs', 'timestamp');")
-	db.QueryOne(&respHT, "SELECT create_hypertable('cryptopia_market_histories', 'timestamp');")
+	db.QueryOne(&respHT, "SELECT create_hypertable('cryptopia_market_logs', 'time');")
+	db.QueryOne(&respHT, "SELECT create_hypertable('cryptopia_market_histories', 'timex');")
 
 	db.QueryOne(&respHT, CryptopiaMarketIdxQuery)
 	db.QueryOne(&respHT, CryptopiaMarketLogIdxQuery)
@@ -56,6 +56,17 @@ func DBUpdateMarkets(db *pg.DB, marketData *[]CryptopiaMarket, newHistory *[]Cry
 		_, err := db.Model(&market).
 			OnConflict("(id) DO UPDATE").
 			Set("ask_price = EXCLUDED.ask_price").
+			Set("bid_price = EXCLUDED.bid_price").
+			Set("low = EXCLUDED.low").
+			Set("high = EXCLUDED.high").
+			Set("volume = EXCLUDED.volume").
+			Set("buy_volume = EXCLUDED.buy_volume").
+			Set("sell_volume = EXCLUDED.sell_volume").
+			Set("change = EXCLUDED.change").
+			Set("open = EXCLUDED.open").
+			Set("base_volume = EXCLUDED.base_volume").
+			Set("base_buy_volume = EXCLUDED.base_buy_volume").
+			Set("base_sell_volume = EXCLUDED.base_sell_volume").
 			Insert()
 
 		if err != nil {
@@ -82,6 +93,7 @@ func DBGetUniqMarkets(db *pg.DB) ([]struct{Label string}, error) {
 	return resp, err
 }
 
+/*
 func DBInsertMarketHistory(db *pg.DB, hist *[]CryptopiaMarketHistory) error {
 	var err error
 
@@ -90,4 +102,4 @@ func DBInsertMarketHistory(db *pg.DB, hist *[]CryptopiaMarketHistory) error {
 	}
 
 	return err
-}
+}*/
