@@ -25,6 +25,12 @@ type CryptopiaMarketsResponse struct {
 	Data    []CryptopiaMarket
 }
 
+type CryptopiaMarketResponse struct {
+	Success string
+	Message string
+	Data    CryptopiaMarketLog
+}
+
 type CryptopiaMarket struct {
 	Id             int			`json:"tradePairId"`
 	Label          string		`sql:"type:varchar(32)"`
@@ -76,7 +82,7 @@ const CryptopiaMarketLogIdxQuery string =
 	`CREATE INDEX cryptopia_market_logs_label_idx ON cryptopia_market_logs(label);`
 
 func (h CryptopiaMarketLog) String() string {
-	return fmt.Sprintf("CryptopiaMarketLog<%s last %f @ %s>", h.Label, h.LastPrice, h.Time)
+	return fmt.Sprintf("CryptopiaMarketLog<%s close %f @ %s>", h.Label, h.Close, h.Time)
 }
 
 type CryptopiaMarketHistoryResponse struct {
@@ -107,5 +113,5 @@ const CryptopiaMarketHistoryIdxQuery string =
 		cryptopia_market_histories(type))`
 
 func (h CryptopiaMarketHistory) String() string {
-	return fmt.Sprintf("CryptopiaMarketHistory<%s last %f @ %s>", h.Label, h.Price, h.Timestamp)
+	return fmt.Sprintf("CryptopiaMarketHistory<%s last %f @ %s>", h.Label, h.Price, h.Time)
 }

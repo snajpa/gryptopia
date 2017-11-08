@@ -53,18 +53,25 @@ func main() {
 
 
 	kkt("DBInsertMarketLogs()")
-	err = DBInsertMarketLogs(db, &newHistory)
-	printErr(err)
 
 	kkt("Traverse Markets and Update Histories")
 	uniqMarkets, err := DBGetUniqMarkets(db)
-	fmt.Printf("uniqMarkets pyco <%v>\n", uniqMarkets)
-
 
 	for _, ticker := range uniqMarkets {
+		var logData CryptopiaMarketLog
+
+		logData, err = CryptopiaGetMarketLogData(ticker.Label)
+		logData.Time = tstamp
+
+		kkt("CryptopiaGetMarketLogData("+ticker.Label+")")
+		fmt.Printf("logData pyco <%v>\n", logData)
+
+		db.Insert(&logData)
+
 		kkt("CryptopiaGetMarketHistoryData("+ticker.Label+")")
 		historyData, _, _ := CryptopiaGetMarketHistoryData(ticker.Label)
-		fmt.Printf("CryptopiaGetMarketHistoryData pyco <%v>\n", historyData)
+
+		DBInsertMarketHistory(db, &historyData)
 
 	}
 

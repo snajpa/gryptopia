@@ -23,6 +23,22 @@ func CryptopiaGetMarketsData() ([]CryptopiaMarket, error) {
 	return parsed.Data, reterr
 }
 
+func CryptopiaGetMarketLogData(ticker string) (CryptopiaMarketLog, error) {
+	var parsed CryptopiaMarketResponse
+
+	var ticker_uscore= strings.Replace(ticker, "/", "_", -1)
+
+	resp, reterr := http.Get("https://www.cryptopia.co.nz/api/GetMarket/" + ticker_uscore + "/")
+
+	if (resp.StatusCode != 200) {
+		fmt.Printf("resp http pyco <%v>\n", resp)
+	}
+
+	json.NewDecoder(resp.Body).Decode(&parsed)
+
+	return parsed.Data, reterr
+}
+
 func CryptopiaGetMarketHistoryData(ticker string) ([]CryptopiaMarketHistory, []string, error) {
 	var parsed CryptopiaMarketHistoryResponse
 	var failedTickers []string

@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/go-pg/pg"
 	"time"
+	"fmt"
 )
 
 func DBcreateSchema(db *pg.DB) error {
@@ -50,6 +51,9 @@ func DBUpdateMarkets(db *pg.DB, marketData *[]CryptopiaMarket, newHistory *[]Cry
 		tmpitem.BaseBuyVolume	= market.BaseBuyVolume
 		tmpitem.BaseSellVolume	= market.BaseSellVolume
 		tmpitem.Time 			= market.Time
+		if tmpitem.Label == "ZEC/BTC" {
+			fmt.Printf("DBUpdateMarkets pyco updating <%v>\n", tmpitem)
+		}
 
 		*newHistory = append(*newHistory, tmpitem)
 
@@ -79,6 +83,11 @@ func DBUpdateMarkets(db *pg.DB, marketData *[]CryptopiaMarket, newHistory *[]Cry
 }
 
 func DBInsertMarketLogs(db *pg.DB, log *[]CryptopiaMarketLog) error {
+	for _, i := range *log {
+			if i.Label == "ZEC/BTC" {
+				fmt.Printf("DBInsertMarketLogs pyco inserting <%v>\n", i)
+			}
+	}
 	return db.Insert(log)
 }
 
@@ -93,7 +102,7 @@ func DBGetUniqMarkets(db *pg.DB) ([]struct{Label string}, error) {
 	return resp, err
 }
 
-/*
+
 func DBInsertMarketHistory(db *pg.DB, hist *[]CryptopiaMarketHistory) error {
 	var err error
 
@@ -102,4 +111,4 @@ func DBInsertMarketHistory(db *pg.DB, hist *[]CryptopiaMarketHistory) error {
 	}
 
 	return err
-}*/
+}
