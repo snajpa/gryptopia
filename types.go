@@ -117,7 +117,8 @@ func (h CryptopiaMarketHistory) String() string {
 	return fmt.Sprintf("CryptopiaMarketHistory<%s last %f @ %s>", h.Label, h.Price, h.Time)
 }
 
-type ResultMapItem struct {
+type ScannerItem struct {
+	LastRun		time.Time
 	Mutex		sync.RWMutex
 	LogData 	CryptopiaMarketLog
 	HistoryData []CryptopiaMarketHistory

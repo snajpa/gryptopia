@@ -19,36 +19,47 @@ func printErr(err error) {
 	}
 }
 
-func FetchTicker(wg *sync.WaitGroup, res *ResultMapItem, label string) {
-	var tstamp = time.Now()
+func Scanner(res *ScannerItem, label string, d time.Duration) {
 
-	defer wg.Done()
+	var tstamp time.Time
 
-	res.Mutex.Lock()
+	for {
+		res.Mutex.Lock()
+		res.LogData, _ = CryptopiaGetMarketLogData(label)
+		res.HistoryData, _, _ = CryptopiaGetMarketHistoryData(label)
 
-	res.LogData, _ = CryptopiaGetMarketLogData(label)
-	res.HistoryData, _, _ = CryptopiaGetMarketHistoryData(label)
+		res.LogData.Time = tstamp
+		for _, i := range res.HistoryData {
+			i.Time = time.Unix(i.Timestamp, 0)
+		}
+		res.LastRun = time.Now()
+		res.Mutex.Unlock()
 
-	res.LogData.Time = tstamp
-	for _, i := range res.HistoryData {
-		i.Time = time.Unix(i.Timestamp, 0)
+		time.Sleep(d)
 	}
 
-	res.Mutex.Unlock()
+
+}
+
+func ScannersWait(atleast time.Time, scanners map[string]*ScannerItem) {
+	for _, v := range scanners {
+		v.Mutex.RLock()
+		for !v.LastRun.After(atleast) {
+			time.Sleep(250 * time.Millisecond)
+		}
+		v.Mutex.RUnlock()
+	}
 }
 
 func main() {
 	var err error
 
-	var tstamp, tbegin time.Time
+	var lastRun time.Time
+	var tbegin time.Time
 
 	var respExist struct { Exists bool}
 
-	var resultMap = make(map[string]*ResultMapItem)
-	var wg sync.WaitGroup
-
-	var insertLogs []CryptopiaMarketLog
-	var insertHistories []CryptopiaMarketHistory
+	var scanners = make(map[string]*ScannerItem)
 
 	tbegin = time.Now()
 
@@ -68,44 +79,57 @@ func main() {
 	}
 
 	kkt("CryptopiaGetMarketsData()")
-	tstamp = time.Now()
+	lastRun = time.Now()
 	marketData, err := CryptopiaGetMarketsData()
 	printErr(err)
 
 	kkt("DBUpdateMarkets()")
-	err = DBUpdateMarkets(db, &marketData, tstamp)
+	err = DBUpdateMarkets(db, &marketData, lastRun)
 	printErr(err)
 
-	kkt("Traverse Markets and Update Histories")
+	kkt("Init scanners")
 	uniqMarkets, err := DBGetUniqMarkets(db)
 
-	for _, ticker := range uniqMarkets {
-
-		resultMap[ticker.Label] = &ResultMapItem{ sync.RWMutex{}, CryptopiaMarketLog{}, []CryptopiaMarketHistory{}}
-
-		kkt("go FetchTicker("+ticker.Label+")")
-		wg.Add(1)
-		go FetchTicker(&wg, resultMap[ticker.Label], ticker.Label)
-	}
-
-	kkt("wg.Wait()")
-	wg.Wait()
+	lastRun = time.Now()
 
 	for _, ticker := range uniqMarkets {
-		var tkr ResultMapItem
+		scanners[ticker.Label] = &ScannerItem{lastRun, sync.RWMutex{}, CryptopiaMarketLog{}, []CryptopiaMarketHistory{}}
 
-		tkr = *resultMap[ticker.Label]
-
-		insertLogs = append(insertLogs, tkr.LogData)
-		insertHistories = append(insertHistories, tkr.HistoryData...)
+		go Scanner(scanners[ticker.Label], ticker.Label, 30*time.Second)
 	}
 
-	kkt("db.Insert()")
-	db.Insert(&insertLogs)
-	db.Model(&insertHistories).
-		OnConflict("(id) DO NOTHING").
-		Insert()
-		
-	fmt.Printf("Time to completion: %s\n", time.Since(tbegin))
+
+	for {
+		var insertLogs []CryptopiaMarketLog
+		var insertHistories []CryptopiaMarketHistory
+
+		kkt("ScannersWait()")
+		ScannersWait(lastRun, scanners)
+
+		for _, ticker := range uniqMarkets {
+
+			if ticker.Label != "HUSH/BTC" {
+				continue
+			}
+
+			var tkr ScannerItem
+
+			tkr = *scanners[ticker.Label]
+
+			insertLogs = append(insertLogs, tkr.LogData)
+			insertHistories = append(insertHistories, tkr.HistoryData...)
+		}
+
+		kkt("db.Insert()")
+		fmt.Printf("Timecheck: %s\n", time.Since(tbegin))
+		db.Insert(&insertLogs)
+		db.Model(&insertHistories).
+			OnConflict("DO NOTHING").
+			Insert()
+
+		time.Sleep(20 * time.Second)
+		lastRun = time.Now()
+	}
+
 }
 
