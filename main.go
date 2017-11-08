@@ -47,6 +47,8 @@ func main() {
 	var resultMap = make(map[string]*ResultMapItem)
 	var wg sync.WaitGroup
 
+	var insertLogs []CryptopiaMarketLog
+	var insertHistories []CryptopiaMarketHistory
 
 	tbegin = time.Now()
 
@@ -94,10 +96,13 @@ func main() {
 
 		tkr = *resultMap[ticker.Label]
 
-		kkt("db.Insert("+ticker.Label+")")
-		db.Insert(&tkr.LogData)
-		DBInsertMarketHistory(db, &tkr.HistoryData)
+		insertLogs = append(insertLogs, tkr.LogData)
+		insertHistories = append(insertHistories, tkr.HistoryData...)
 	}
+
+	kkt("db.Insert()")
+	db.Insert(&insertLogs)
+	db.Insert(&insertHistories)
 
 	fmt.Printf("Time to completion: %s\n", time.Since(tbegin))
 }
