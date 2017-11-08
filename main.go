@@ -53,7 +53,7 @@ func ScannersWait(atleast time.Time, scanners map[string]*ScannerItem) {
 	for _, v := range scanners {
 		//kkt("v.Mutex.RLock() "+v.Label)
 		for !done {
-			time.Sleep(250 * time.Millisecond)
+			time.Sleep(50 * time.Millisecond)
 			v.Mutex.RLock()
 			done = v.LastRun.After(atleast)
 			v.Mutex.RUnlock()
@@ -116,14 +116,17 @@ func main() {
 
 		kkt("ScannersWait()")
 		ScannersWait(lastRun, scanners)
+		lastRun = time.Now()
 
 		for _, ticker := range uniqMarkets {
 			var tkr ScannerItem
 
 			tkr = *scanners[ticker.Label]
 
+			tkr.Mutex.RLock()
 			insertLogs = append(insertLogs, tkr.LogData)
 			insertHistories = append(insertHistories, tkr.HistoryData...)
+			tkr.Mutex.RUnlock()
 		}
 
 		kkt("db.Insert()")
@@ -134,7 +137,6 @@ func main() {
 			Insert()
 
 		time.Sleep(20 * time.Second)
-		lastRun = time.Now()
 	}
 
 }
