@@ -4,6 +4,7 @@ import (
 	"github.com/go-pg/pg"
 	"fmt"
 	"time"
+	"sync"
 )
 
 
@@ -18,11 +19,33 @@ func printErr(err error) {
 	}
 }
 
+func FetchTicker(wg *sync.WaitGroup, res *ResultMapItem, label string) {
+	var tstamp = time.Now()
+
+	defer wg.Done()
+
+	res.Mutex.Lock()
+
+	res.LogData, _ = CryptopiaGetMarketLogData(label)
+	res.HistoryData, _, _ = CryptopiaGetMarketHistoryData(label)
+
+	res.LogData.Time = tstamp
+	for _, i := range res.HistoryData {
+		i.Time = time.Unix(i.Timestamp, 0)
+	}
+
+	res.Mutex.Unlock()
+}
+
 func main() {
 	var err error
+
 	var tstamp, tbegin time.Time
+
 	var respExist struct { Exists bool}
-	var newHistory []CryptopiaMarketLog
+
+	var resultMap = make(map[string]*ResultMapItem)
+	var wg sync.WaitGroup
 
 
 	tbegin = time.Now()
@@ -48,31 +71,32 @@ func main() {
 	printErr(err)
 
 	kkt("DBUpdateMarkets()")
-	err = DBUpdateMarkets(db, &marketData, &newHistory, tstamp)
+	err = DBUpdateMarkets(db, &marketData, tstamp)
 	printErr(err)
-
-
-	kkt("DBInsertMarketLogs()")
 
 	kkt("Traverse Markets and Update Histories")
 	uniqMarkets, err := DBGetUniqMarkets(db)
 
 	for _, ticker := range uniqMarkets {
-		var logData CryptopiaMarketLog
 
-		logData, err = CryptopiaGetMarketLogData(ticker.Label)
-		logData.Time = tstamp
+		resultMap[ticker.Label] = &ResultMapItem{ sync.RWMutex{}, CryptopiaMarketLog{}, []CryptopiaMarketHistory{}}
 
-		kkt("CryptopiaGetMarketLogData("+ticker.Label+")")
-		fmt.Printf("logData pyco <%v>\n", logData)
+		kkt("go FetchTicker("+ticker.Label+")")
+		wg.Add(1)
+		go FetchTicker(&wg, resultMap[ticker.Label], ticker.Label)
+	}
 
-		db.Insert(&logData)
+	kkt("wg.Wait()")
+	wg.Wait()
 
-		kkt("CryptopiaGetMarketHistoryData("+ticker.Label+")")
-		historyData, _, _ := CryptopiaGetMarketHistoryData(ticker.Label)
+	for _, ticker := range uniqMarkets {
+		var tkr ResultMapItem
 
-		DBInsertMarketHistory(db, &historyData)
+		tkr = *resultMap[ticker.Label]
 
+		kkt("db.Insert("+ticker.Label+")")
+		db.Insert(&tkr.LogData)
+		DBInsertMarketHistory(db, &tkr.HistoryData)
 	}
 
 	fmt.Printf("Time to completion: %s\n", time.Since(tbegin))

@@ -28,34 +28,10 @@ func DBcreateSchema(db *pg.DB) error {
 	return lasterr
 }
 
-func DBUpdateMarkets(db *pg.DB, marketData *[]CryptopiaMarket, newHistory *[]CryptopiaMarketLog, tstamp time.Time) error {
+func DBUpdateMarkets(db *pg.DB, marketData *[]CryptopiaMarket, tstamp time.Time) error {
 	for _, market := range *marketData {
-		var tmpitem CryptopiaMarketLog
 
 		market.Time = tstamp
-
-		tmpitem.TradePairId		= market.Id
-		tmpitem.Label 			= market.Label
-		tmpitem.AskPrice 		= market.AskPrice
-		tmpitem.BidPrice		= market.BidPrice
-		tmpitem.Low				= market.Low
-		tmpitem.High			= market.High
-		tmpitem.Volume			= market.Volume
-		tmpitem.LastPrice		= market.LastPrice
-		tmpitem.BuyVolume		= market.BuyVolume
-		tmpitem.SellVolume		= market.SellVolume
-		tmpitem.Change			= market.Change
-		tmpitem.Open			= market.Open
-		tmpitem.Close			= market.Close
-		tmpitem.BaseVolume		= market.BaseVolume
-		tmpitem.BaseBuyVolume	= market.BaseBuyVolume
-		tmpitem.BaseSellVolume	= market.BaseSellVolume
-		tmpitem.Time 			= market.Time
-		if tmpitem.Label == "ZEC/BTC" {
-			fmt.Printf("DBUpdateMarkets pyco updating <%v>\n", tmpitem)
-		}
-
-		*newHistory = append(*newHistory, tmpitem)
 
 		_, err := db.Model(&market).
 			OnConflict("(id) DO UPDATE").
@@ -76,8 +52,6 @@ func DBUpdateMarkets(db *pg.DB, marketData *[]CryptopiaMarket, newHistory *[]Cry
 		if err != nil {
 			panic(err)
 		}
-
-
 	}
 	return nil
 }
@@ -92,7 +66,7 @@ func DBInsertMarketLogs(db *pg.DB, log *[]CryptopiaMarketLog) error {
 }
 
 func DBGetUniqMarkets(db *pg.DB) ([]struct{Label string}, error) {
-	var resp []struct{Label string}
+	var resp []struct {Label string}
 	var err error
 
 	err = db.Model(&CryptopiaMarket{}).
