@@ -19,21 +19,27 @@ func printErr(err error) {
 	}
 }
 
-func Scanner(res *ScannerItem, label string, d time.Duration) {
+func Scanner(res *ScannerItem, d time.Duration) {
 
-	var tstamp time.Time
 
 	for {
-		res.Mutex.Lock()
-		res.LogData, _ = CryptopiaGetMarketLogData(label)
-		res.HistoryData, _, _ = CryptopiaGetMarketHistoryData(label)
+		var tstamp = time.Now()
+		var tmpLogData, _= CryptopiaGetMarketLogData(res.Label)
+		var tmpHistoryData, _, _ = CryptopiaGetMarketHistoryData(res.Label)
 
-		res.LogData.Time = tstamp
-		for _, i := range res.HistoryData {
+		tmpLogData.Time = tstamp
+		for _, i := range tmpHistoryData {
 			i.Time = time.Unix(i.Timestamp, 0)
 		}
-		res.LastRun = time.Now()
+
+		//kkt("res.Mutex.Lock() "+res.Label)
+		res.Mutex.Lock()
+		res.LogData = tmpLogData
+		res.HistoryData = tmpHistoryData
+		res.LastRun = tstamp
 		res.Mutex.Unlock()
+
+		//kkt("res.Mutex.Unlock() "+res.Label)
 
 		time.Sleep(d)
 	}
@@ -42,12 +48,17 @@ func Scanner(res *ScannerItem, label string, d time.Duration) {
 }
 
 func ScannersWait(atleast time.Time, scanners map[string]*ScannerItem) {
+	var done = false
+
 	for _, v := range scanners {
-		v.Mutex.RLock()
-		for !v.LastRun.After(atleast) {
+		//kkt("v.Mutex.RLock() "+v.Label)
+		for !done {
 			time.Sleep(250 * time.Millisecond)
+			v.Mutex.RLock()
+			done = v.LastRun.After(atleast)
+			v.Mutex.RUnlock()
 		}
-		v.Mutex.RUnlock()
+		//kkt("v.Mutex.RUnlock() "+v.Label)
 	}
 }
 
@@ -93,9 +104,9 @@ func main() {
 	lastRun = time.Now()
 
 	for _, ticker := range uniqMarkets {
-		scanners[ticker.Label] = &ScannerItem{lastRun, sync.RWMutex{}, CryptopiaMarketLog{}, []CryptopiaMarketHistory{}}
+		scanners[ticker.Label] = &ScannerItem{lastRun, sync.RWMutex{}, ticker.Label, CryptopiaMarketLog{}, []CryptopiaMarketHistory{}}
 
-		go Scanner(scanners[ticker.Label], ticker.Label, 30*time.Second)
+		go Scanner(scanners[ticker.Label], 30*time.Second)
 	}
 
 
@@ -107,11 +118,6 @@ func main() {
 		ScannersWait(lastRun, scanners)
 
 		for _, ticker := range uniqMarkets {
-
-			if ticker.Label != "HUSH/BTC" {
-				continue
-			}
-
 			var tkr ScannerItem
 
 			tkr = *scanners[ticker.Label]

@@ -120,6 +120,7 @@ func (h CryptopiaMarketHistory) String() string {
 type ScannerItem struct {
 	LastRun		time.Time
 	Mutex		sync.RWMutex
+	Label		string
 	LogData 	CryptopiaMarketLog
 	HistoryData []CryptopiaMarketHistory
 }
