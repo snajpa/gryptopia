@@ -102,8 +102,10 @@ func main() {
 
 	kkt("db.Insert()")
 	db.Insert(&insertLogs)
-	db.Insert(&insertHistories)
-
+	db.Model(&insertHistories).
+		OnConflict("(id) DO NOTHING").
+		Insert()
+		
 	fmt.Printf("Time to completion: %s\n", time.Since(tbegin))
 }
 
