@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-const MainSleep =			5 * time.Second
+const MainSleep =			15 * time.Second
 const ScannerSleep =		10 * time.Second
 const HTTPDialTimeout = 	30 * time.Second
 const HTTPTLSTimeout = 		30 * time.Second
