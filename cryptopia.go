@@ -9,19 +9,21 @@ import (
 	"fmt"
 )
 
+var netTransport = &http.Transport{
+	MaxIdleConns: 10000,
+	MaxIdleConnsPerHost: 1500,
+	Dial: (&net.Dialer{
+		Timeout: HTTPDialTimeout,
+	}).Dial,
+	TLSHandshakeTimeout: HTTPTLSTimeout,
+}
+var httpClient = &http.Client{
+	Timeout: HTTPClientTimeout,
+	Transport: netTransport,
+}
 
 func CryptopiaGetMarketsData() ([]CryptopiaMarket, error) {
 	var parsed CryptopiaMarketsResponse
-	var netTransport = &http.Transport{
-		Dial: (&net.Dialer{
-			Timeout: HTTPDialTimeout,
-		}).Dial,
-		TLSHandshakeTimeout: HTTPTLSTimeout,
-	}
-	var httpClient = &http.Client{
-		Timeout: HTTPClientTimeout,
-		Transport: netTransport,
-	}
 
 	resp, reterr := httpClient.Get("https://cryptopia.co.nz/api/GetMarkets")
 
@@ -36,16 +38,7 @@ func CryptopiaGetMarketsData() ([]CryptopiaMarket, error) {
 
 func CryptopiaGetMarketLogData(ticker string) (CryptopiaMarketLog, error) {
 	var parsed CryptopiaMarketResponse
-	var netTransport = &http.Transport{
-		Dial: (&net.Dialer{
-			Timeout: HTTPDialTimeout,
-		}).Dial,
-		TLSHandshakeTimeout: HTTPTLSTimeout,
-	}
-	var httpClient = &http.Client{
-		Timeout: HTTPClientTimeout,
-		Transport: netTransport,
-	}
+
 
 	var ticker_uscore= strings.Replace(ticker, "/", "_", -1)
 
@@ -64,16 +57,6 @@ func CryptopiaGetMarketLogData(ticker string) (CryptopiaMarketLog, error) {
 
 func CryptopiaGetMarketHistoryData(ticker string) ([]CryptopiaMarketHistory, error) {
 	var parsed CryptopiaMarketHistoryResponse
-	var netTransport = &http.Transport{
-		Dial: (&net.Dialer{
-			Timeout: HTTPDialTimeout,
-		}).Dial,
-		TLSHandshakeTimeout: HTTPTLSTimeout,
-	}
-	var httpClient = &http.Client{
-		Timeout: HTTPClientTimeout,
-		Transport: netTransport,
-	}
 
 	var ret []CryptopiaMarketHistory
 

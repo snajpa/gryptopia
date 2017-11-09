@@ -124,6 +124,7 @@ func main() {
 
 	kkt("Init scanners")
 	uniqMarkets, err := DBGetUniqMarkets(db)
+	fmt.Printf("log: Creating %d scanners...\n", len(uniqMarkets))
 
 	for _, ticker := range uniqMarkets {
 		/*if ticker.Label != "HUSH/BTC" {
@@ -131,6 +132,7 @@ func main() {
 		}*/
 		scanners[ticker.Label] = &ScannerItem{lastRun, false,sync.RWMutex{}, ticker.Label, CryptopiaMarketLog{}, []CryptopiaMarketHistory{}}
 
+		time.Sleep(10 * time.Millisecond)
 		go Scanner(scanners[ticker.Label])
 	}
 
@@ -143,6 +145,7 @@ func main() {
 		var insertHistories []CryptopiaMarketHistory
 		var failedTickers []string
 		var failedNum = 0
+		var upToDateCtr = 0
 
 		lastEnd := lastRun
 		lastRun = time.Now()
@@ -157,13 +160,17 @@ func main() {
 			tkr = *scanners[ticker.Label]
 
 			tkr.Mutex.RLock()
-			insertLogs = append(insertLogs, tkr.LogData)
-			insertHistories = append(insertHistories, tkr.HistoryData...)
+			if (tkr.LastRun.After(lastEnd)) {
+				upToDateCtr++
+				insertLogs = append(insertLogs, tkr.LogData)
+				insertHistories = append(insertHistories, tkr.HistoryData...)
+			}
 
 			if (tkr.LastFailed) {
 				failedNum++
 				failedTickers = append(failedTickers, ticker.Label)
 			}
+
 			tkr.Mutex.RUnlock()
 		}
 
@@ -175,6 +182,7 @@ func main() {
 
 		fmt.Printf("log: Fials: %v\n", failedTickers)
 		fmt.Printf("log: FialCount: %v\n", failedNum)
+		fmt.Printf("log: upToDateCtr: %d\n", upToDateCtr)
 		fmt.Printf("log: Timecheck: %s, update took %s\n", time.Since(tbegin), lastRun.Sub(lastEnd))
 		sleepAtLeast(lastRun, MainSleep)
 	}
