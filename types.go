@@ -7,10 +7,10 @@ import (
 )
 
 const MainSleep =			30 * time.Second
-const ScannerSleep =		30 * time.Second
+const ScannerSleep =		20 * time.Second
 const HTTPDialTimeout = 	30 * time.Second
 const HTTPTLSTimeout = 		30 * time.Second
-const HTTPClientTimeout = 	60 * time.Second
+const HTTPClientTimeout = 	90 * time.Second
 
 /*type Trade struct {
 	Time	time.Time
