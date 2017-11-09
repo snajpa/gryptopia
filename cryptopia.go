@@ -27,7 +27,7 @@ func CryptopiaGetMarketsData() ([]CryptopiaMarket, error) {
 
 	resp, reterr := httpClient.Get("https://cryptopia.co.nz/api/GetMarkets")
 
-	if resp.Body != nil {
+	if resp != nil {
 		defer resp.Body.Close()
 	}
 
@@ -48,7 +48,7 @@ func CryptopiaGetMarketLogData(ticker string) (CryptopiaMarketLog, error) {
 
 	resp, reterr := httpClient.Get("https://cryptopia.co.nz/api/GetMarket/" + ticker_uscore + "/")
 
-	if resp.Body != nil {
+	if resp != nil {
 		defer resp.Body.Close()
 	}
 
@@ -70,7 +70,7 @@ func CryptopiaGetMarketHistoryData(ticker string) ([]CryptopiaMarketHistory, err
 
 	resp, reterr := httpClient.Get("https://cryptopia.co.nz/api/GetMarketHistory/"+ticker_uscore+"/")
 
-	if resp.Body != nil {
+	if resp != nil {
 		defer resp.Body.Close()
 	}
 
