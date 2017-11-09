@@ -46,7 +46,7 @@ func CryptopiaGetMarketLogData(ticker string) (CryptopiaMarketLog, error) {
 
 	var ticker_uscore= strings.Replace(ticker, "/", "_", -1)
 
-	resp, reterr := httpClient.Get("https://cryptopia.co.nz/api/GetMarket/" + ticker_uscore + "/")
+	resp, reterr := httpClient.Get("https://cryptopia.co.nz/api/GetMarket/" + ticker_uscore + "/1")
 
 	if resp != nil {
 		defer resp.Body.Close()
@@ -68,7 +68,7 @@ func CryptopiaGetMarketHistoryData(ticker string) ([]CryptopiaMarketHistory, err
 
 	var ticker_uscore = strings.Replace(ticker, "/", "_", -1)
 
-	resp, reterr := httpClient.Get("https://cryptopia.co.nz/api/GetMarketHistory/"+ticker_uscore+"/")
+	resp, reterr := httpClient.Get("https://cryptopia.co.nz/api/GetMarketHistory/"+ticker_uscore+"/1")
 
 	if resp != nil {
 		defer resp.Body.Close()
