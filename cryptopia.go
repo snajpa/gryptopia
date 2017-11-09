@@ -3,16 +3,26 @@ package main
 import (
 	"net/http"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"time"
+	"net"
 )
 
 
 func CryptopiaGetMarketsData() ([]CryptopiaMarket, error) {
 	var parsed CryptopiaMarketsResponse
+	var netTransport = &http.Transport{
+		Dial: (&net.Dialer{
+			Timeout: HTTPDialTimeout,
+		}).Dial,
+		TLSHandshakeTimeout: HTTPTLSTimeout,
+	}
+	var httpClient = &http.Client{
+		Timeout: HTTPClientTimeout,
+		Transport: netTransport,
+	}
 
-	resp, reterr := http.Get("https://www.cryptopia.co.nz/api/GetMarkets")
+	resp, reterr := httpClient.Get("https://www.cryptopia.co.nz/api/GetMarkets")
 
 	if (resp.StatusCode != 200) {
 		panic("kokot")
@@ -25,13 +35,24 @@ func CryptopiaGetMarketsData() ([]CryptopiaMarket, error) {
 
 func CryptopiaGetMarketLogData(ticker string) (CryptopiaMarketLog, error) {
 	var parsed CryptopiaMarketResponse
+	var netTransport = &http.Transport{
+		Dial: (&net.Dialer{
+			Timeout: HTTPDialTimeout,
+		}).Dial,
+		TLSHandshakeTimeout: HTTPTLSTimeout,
+	}
+	var httpClient = &http.Client{
+		Timeout: HTTPClientTimeout,
+		Transport: netTransport,
+	}
 
 	var ticker_uscore= strings.Replace(ticker, "/", "_", -1)
 
-	resp, reterr := http.Get("https://www.cryptopia.co.nz/api/GetMarket/" + ticker_uscore + "/")
+	resp, reterr := httpClient.Get("https://www.cryptopia.co.nz/api/GetMarket/" + ticker_uscore + "/")
 
-	if (resp.StatusCode != 200) {
-		fmt.Printf("resp http pyco <%v>\n", resp)
+	if (reterr != nil) || (resp.StatusCode != 200) {
+		//fmt.Printf("err: failed http.Get(https://www.cryptopia.co.nz/api/GetMarket/%s/) resp <%v> err <%v>\n", ticker_uscore, resp, reterr)
+		return CryptopiaMarketLog{}, reterr
 	}
 
 	json.NewDecoder(resp.Body).Decode(&parsed)
@@ -39,18 +60,28 @@ func CryptopiaGetMarketLogData(ticker string) (CryptopiaMarketLog, error) {
 	return parsed.Data, reterr
 }
 
-func CryptopiaGetMarketHistoryData(ticker string) ([]CryptopiaMarketHistory, []string, error) {
+func CryptopiaGetMarketHistoryData(ticker string) ([]CryptopiaMarketHistory, error) {
 	var parsed CryptopiaMarketHistoryResponse
-	var failedTickers []string
+	var netTransport = &http.Transport{
+		Dial: (&net.Dialer{
+			Timeout: HTTPDialTimeout,
+		}).Dial,
+		TLSHandshakeTimeout: HTTPTLSTimeout,
+	}
+	var httpClient = &http.Client{
+		Timeout: HTTPClientTimeout,
+		Transport: netTransport,
+	}
+
 	var ret []CryptopiaMarketHistory
 
 	var ticker_uscore = strings.Replace(ticker, "/", "_", -1)
 
-	resp, reterr := http.Get("https://www.cryptopia.co.nz/api/GetMarketHistory/"+ticker_uscore+"/")
+	resp, reterr := httpClient.Get("https://www.cryptopia.co.nz/api/GetMarketHistory/"+ticker_uscore+"/")
 
-	if (resp.StatusCode != 200) {
-		failedTickers = append(failedTickers, ticker)
-		fmt.Printf("resp http pyco <%v>\n", resp)
+	if (reterr != nil) || (resp.StatusCode != 200) {
+		//fmt.Printf("err: failed http.Get(https://www.cryptopia.co.nz/api/GetMarketHistory/%s/) resp <%v> err <%v>\n", ticker_uscore, resp, reterr)
+		return []CryptopiaMarketHistory{}, reterr
 	}
 
 	json.NewDecoder(resp.Body).Decode(&parsed)
@@ -59,5 +90,5 @@ func CryptopiaGetMarketHistoryData(ticker string) ([]CryptopiaMarketHistory, []s
 		ret = append(ret, i)
 	}
 
-	return ret, failedTickers, reterr
+	return ret, reterr
 }

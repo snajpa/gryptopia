@@ -6,6 +6,11 @@ import (
 	"sync"
 )
 
+const MainSleep =			30 * time.Second
+const ScannerSleep =		30 * time.Second
+const HTTPDialTimeout = 	30 * time.Second
+const HTTPTLSTimeout = 		30 * time.Second
+const HTTPClientTimeout = 	60 * time.Second
 
 /*type Trade struct {
 	Time	time.Time
@@ -119,6 +124,7 @@ func (h CryptopiaMarketHistory) String() string {
 
 type ScannerItem struct {
 	LastRun		time.Time
+	LastFailed	bool
 	Mutex		sync.RWMutex
 	Label		string
 	LogData 	CryptopiaMarketLog

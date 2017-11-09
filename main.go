@@ -19,13 +19,29 @@ func printErr(err error) {
 	}
 }
 
-func Scanner(res *ScannerItem, d time.Duration) {
+func sleepAtLeast(torig time.Time, d time.Duration) {
+	elapsed := time.Since(torig)
+
+	if (elapsed > d) {
+		return
+	}
+
+	time.Sleep(d - elapsed)
+}
+
+func Scanner(res *ScannerItem) {
 
 
 	for {
+		var tbegin = time.Now()
+
+		res.Mutex.RLock()
+		var label = res.Label
+		res.Mutex.RUnlock()
+
 		var tstamp = time.Now()
-		var tmpLogData, _= CryptopiaGetMarketLogData(res.Label)
-		var tmpHistoryData, _, _ = CryptopiaGetMarketHistoryData(res.Label)
+		var tmpLogData, err1 = CryptopiaGetMarketLogData(label)
+		var tmpHistoryData, err2 = CryptopiaGetMarketHistoryData(label)
 
 		tmpLogData.Time = tstamp
 		for _, i := range tmpHistoryData {
@@ -37,11 +53,19 @@ func Scanner(res *ScannerItem, d time.Duration) {
 		res.LogData = tmpLogData
 		res.HistoryData = tmpHistoryData
 		res.LastRun = tstamp
+
+		if (err1 != nil) || (err2 != nil) {
+			res.LastFailed = true
+		} else {
+			res.LastFailed = false
+		}
+
 		res.Mutex.Unlock()
 
 		//kkt("res.Mutex.Unlock() "+res.Label)
 
-		time.Sleep(d)
+		sleepAtLeast(tbegin, ScannerSleep)
+
 	}
 
 
@@ -53,7 +77,7 @@ func ScannersWait(atleast time.Time, scanners map[string]*ScannerItem) {
 	for _, v := range scanners {
 		//kkt("v.Mutex.RLock() "+v.Label)
 		for !done {
-			time.Sleep(50 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 			v.Mutex.RLock()
 			done = v.LastRun.After(atleast)
 			v.Mutex.RUnlock()
@@ -101,42 +125,58 @@ func main() {
 	kkt("Init scanners")
 	uniqMarkets, err := DBGetUniqMarkets(db)
 
-	lastRun = time.Now()
-
 	for _, ticker := range uniqMarkets {
-		scanners[ticker.Label] = &ScannerItem{lastRun, sync.RWMutex{}, ticker.Label, CryptopiaMarketLog{}, []CryptopiaMarketHistory{}}
+		/*if ticker.Label != "HUSH/BTC" {
+			continue
+		}*/
+		scanners[ticker.Label] = &ScannerItem{lastRun, false,sync.RWMutex{}, ticker.Label, CryptopiaMarketLog{}, []CryptopiaMarketHistory{}}
 
-		go Scanner(scanners[ticker.Label], 30*time.Second)
+		go Scanner(scanners[ticker.Label])
 	}
 
+	kkt("ScannersWait()")
+	lastRun = time.Now()
+	ScannersWait(lastRun, scanners)
 
 	for {
 		var insertLogs []CryptopiaMarketLog
 		var insertHistories []CryptopiaMarketHistory
+		var failedTickers []string
+		var failedNum = 0
 
-		kkt("ScannersWait()")
-		ScannersWait(lastRun, scanners)
+		lastEnd := lastRun
 		lastRun = time.Now()
 
 		for _, ticker := range uniqMarkets {
 			var tkr ScannerItem
+
+			/*if ticker.Label != "HUSH/BTC" {
+				continue
+			}*/
 
 			tkr = *scanners[ticker.Label]
 
 			tkr.Mutex.RLock()
 			insertLogs = append(insertLogs, tkr.LogData)
 			insertHistories = append(insertHistories, tkr.HistoryData...)
+
+			if (tkr.LastFailed) {
+				failedNum++
+				failedTickers = append(failedTickers, ticker.Label)
+			}
 			tkr.Mutex.RUnlock()
 		}
 
 		kkt("db.Insert()")
-		fmt.Printf("Timecheck: %s\n", time.Since(tbegin))
 		db.Insert(&insertLogs)
 		db.Model(&insertHistories).
 			OnConflict("DO NOTHING").
 			Insert()
 
-		time.Sleep(20 * time.Second)
+		fmt.Printf("log: Fials: %v\n", failedTickers)
+		fmt.Printf("log: FialCount: %v\n", failedNum)
+		fmt.Printf("log: Timecheck: %s, update took %s\n", time.Since(tbegin), lastRun.Sub(lastEnd))
+		sleepAtLeast(lastRun, MainSleep)
 	}
 
 }
