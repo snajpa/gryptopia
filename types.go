@@ -116,7 +116,7 @@ const CryptopiaMarketHistoryIdxQuery string =
 		cryptopia_market_histories(timestamp),
 		cryptopia_market_histories(price),
 		cryptopia_market_histories(amount),
-		cryptopia_market_histories(type))`
+		cryptopia_market_histories(type));`
 
 func (h CryptopiaMarketHistory) String() string {
 	return fmt.Sprintf("CryptopiaMarketHistory<%s last %f @ %s>", h.Label, h.Price, h.Time)
