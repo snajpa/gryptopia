@@ -11,7 +11,7 @@ import (
 
 var netTransport = &http.Transport{
 	MaxIdleConns: 10000,
-	MaxIdleConnsPerHost: 1500,
+	MaxIdleConnsPerHost: 2000,
 	Dial: (&net.Dialer{
 		Timeout: HTTPDialTimeout,
 	}).Dial,
