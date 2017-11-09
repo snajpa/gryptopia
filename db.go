@@ -19,7 +19,7 @@ func DBcreateSchema(db *pg.DB) error {
 	}
 
 	db.QueryOne(&respHT, "SELECT create_hypertable('cryptopia_market_logs', 'time');")
-	db.QueryOne(&respHT, "SELECT create_hypertable('cryptopia_market_histories', 'timex');")
+	db.QueryOne(&respHT, "SELECT create_hypertable('cryptopia_market_histories', 'time');")
 
 	db.QueryOne(&respHT, CryptopiaMarketIdxQuery)
 	db.QueryOne(&respHT, CryptopiaMarketLogIdxQuery)
