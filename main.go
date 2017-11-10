@@ -35,33 +35,36 @@ func Scanner(res *ScannerItem) {
 
 	res.Mutex.RLock()
 	var httpClient = &http.Client{Timeout: HTTPClientTimeout, Transport: &res.netTransport}
+	var label = res.Label
 	res.Mutex.RUnlock()
 
 	for {
 		var tbegin = time.Now()
-		res.Mutex.Lock()
-		var label = res.Label
-
 		var tstamp = time.Now()
+
 		var tmpLogData, err1 = CryptopiaGetMarketLogData(httpClient, label)
 		var tmpHistoryData, err2 = CryptopiaGetMarketHistoryData(httpClient, label)
 		var tmpOrderData, err3 = CryptopiaGetMarketOrdersData(httpClient, label)
+		var failed bool
+
+		if (err1 != nil) || (err2 != nil)  || (err3 != nil) {
+			failed = true
+		} else {
+			failed = false
+		}
 
 		tmpLogData.Time = tstamp
 		for i, _ := range tmpOrderData {
 			tmpOrderData[i].Time = tstamp
 		}
 
+		res.Mutex.Lock()
+
 		res.LogData = tmpLogData
 		res.HistoryData = tmpHistoryData
 		res.OrderData = tmpOrderData
 		res.LastRun = tstamp
-
-		if (err1 != nil) || (err2 != nil)  || (err3 != nil) {
-			res.LastFailed = true
-		} else {
-			res.LastFailed = false
-		}
+		res.LastFailed = failed
 
 		res.Mutex.Unlock()
 
