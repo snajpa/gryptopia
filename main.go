@@ -139,7 +139,14 @@ func main() {
 			false,
 			sync.RWMutex{},
 			ticker.Label,
-			*netTransport,
+			http.Transport{
+				MaxIdleConns: 16000,
+				MaxIdleConnsPerHost: 8000,
+				Dial: (&net.Dialer{
+					Timeout: HTTPDialTimeout,
+				}).Dial,
+				TLSHandshakeTimeout: HTTPTLSTimeout,
+			},
 			CryptopiaMarketLog{},
 			[]CryptopiaMarketHistory{},
 			[]CryptopiaMarketOrder{},
