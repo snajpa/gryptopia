@@ -10,8 +10,8 @@ import (
 )
 
 var netTransport = &http.Transport{
-	MaxIdleConns: 10000,
-	MaxIdleConnsPerHost: 2000,
+	MaxIdleConns: 16000,
+	MaxIdleConnsPerHost: 8000,
 	Dial: (&net.Dialer{
 		Timeout: HTTPDialTimeout,
 	}).Dial,
@@ -112,13 +112,11 @@ func CryptopiaGetMarketOrdersData(ticker string) ([]CryptopiaMarketOrder, error)
 
 	for _, i := range parsed.Data.Buy {
 		i.Type = "Buy"
-		kkt("pica Buy")
 		ret = append(ret, i)
 	}
 
 	for _, i := range parsed.Data.Sell {
 		i.Type = "Sell"
-		kkt("pica Sell")
 		ret = append(ret, i)
 	}
 
