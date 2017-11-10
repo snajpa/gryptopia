@@ -45,11 +45,8 @@ func Scanner(res *ScannerItem) {
 		var tmpOrderData, err3 = CryptopiaGetMarketOrdersData(label)
 
 		tmpLogData.Time = tstamp
-		for _, i := range tmpHistoryData {
-			i.Time = time.Unix(i.Timestamp, 0)
-		}
-		for _, i := range tmpOrderData {
-			i.Time = tstamp
+		for i, _ := range tmpOrderData {
+			tmpOrderData[i].Time = tstamp
 		}
 
 		res.Mutex.Lock()

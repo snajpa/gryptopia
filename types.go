@@ -7,7 +7,7 @@ import (
 )
 
 const MainSleep =			15 * time.Second
-const ScannerSleep =		5 * time.Second
+const ScannerSleep =		14 * time.Second
 const HTTPDialTimeout = 	30 * time.Second
 const HTTPTLSTimeout = 		60 * time.Second
 const HTTPClientTimeout = 	90 * time.Second
@@ -135,7 +135,9 @@ type CryptopiaMarketOrder struct {
 	Total			float64
 	Time			time.Time
 }
-
+func (h CryptopiaMarketOrder) String() string {
+	return fmt.Sprintf("CryptopiaMarketOrder<%s price %f total %f @ %s>", h.Label, h.Price, h.Total, h.Time)
+}
 const CryptopiaMarketOrdersIdxQuery string =
 	`CREATE INDEX cryptopia_market_orders_label_idx ON cryptopia_market_orders(label);
 	CREATE INDEX cryptopia_market_orders_type_idx ON cryptopia_market_orders(type);
