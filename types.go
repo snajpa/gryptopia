@@ -5,7 +5,6 @@ import (
 	"time"
 	"sync"
 	"net/http"
-	"net"
 )
 
 const MainSleep =			15 * time.Second

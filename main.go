@@ -139,10 +139,7 @@ func main() {
 			false,
 			sync.RWMutex{},
 			ticker.Label,
-			http.Client{
-					Timeout: HTTPClientTimeout,
-					Transport: netTransport,
-					},
+			*netTransport,
 			CryptopiaMarketLog{},
 			[]CryptopiaMarketHistory{},
 			[]CryptopiaMarketOrder{},
