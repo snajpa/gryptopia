@@ -5,6 +5,7 @@ import (
 	"time"
 	"sync"
 	"net/http"
+	"net"
 )
 
 const MainSleep =			15 * time.Second
@@ -147,12 +148,12 @@ const CryptopiaMarketOrdersIdxQuery string =
 
 
 type ScannerItem struct {
-	LastRun		time.Time
-	LastFailed	bool
-	Mutex		sync.RWMutex
-	Label		string
-	HttpClient	http.Client
-	LogData 	CryptopiaMarketLog
-	HistoryData []CryptopiaMarketHistory
-	OrderData	[]CryptopiaMarketOrder
+	LastRun      time.Time
+	LastFailed   bool
+	Mutex        sync.RWMutex
+	Label        string
+	netTransport http.Transport
+	LogData      CryptopiaMarketLog
+	HistoryData  []CryptopiaMarketHistory
+	OrderData    []CryptopiaMarketOrder
 }

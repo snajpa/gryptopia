@@ -33,17 +33,19 @@ func sleepAtLeast(torig time.Time, d time.Duration) {
 
 func Scanner(res *ScannerItem) {
 
+	res.Mutex.RLock()
+	var httpClient = &http.Client{Timeout: HTTPClientTimeout, Transport: &res.netTransport}
+	res.Mutex.RUnlock()
 
 	for {
 		var tbegin = time.Now()
-
 		res.Mutex.Lock()
 		var label = res.Label
 
 		var tstamp = time.Now()
-		var tmpLogData, err1 = CryptopiaGetMarketLogData(&res.HttpClient, label)
-		var tmpHistoryData, err2 = CryptopiaGetMarketHistoryData(&res.HttpClient, label)
-		var tmpOrderData, err3 = CryptopiaGetMarketOrdersData(&res.HttpClient, label)
+		var tmpLogData, err1 = CryptopiaGetMarketLogData(httpClient, label)
+		var tmpHistoryData, err2 = CryptopiaGetMarketHistoryData(httpClient, label)
+		var tmpOrderData, err3 = CryptopiaGetMarketOrdersData(httpClient, label)
 
 		tmpLogData.Time = tstamp
 		for i, _ := range tmpOrderData {
