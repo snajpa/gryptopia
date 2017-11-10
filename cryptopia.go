@@ -5,24 +5,10 @@ import (
 	"encoding/json"
 	"strings"
 	"time"
-	"net"
 	"fmt"
 )
 
-var netTransport = &http.Transport{
-	MaxIdleConns: 16000,
-	MaxIdleConnsPerHost: 8000,
-	Dial: (&net.Dialer{
-		Timeout: HTTPDialTimeout,
-	}).Dial,
-	TLSHandshakeTimeout: HTTPTLSTimeout,
-}
-var httpClient = &http.Client{
-	Timeout: HTTPClientTimeout,
-	Transport: netTransport,
-}
-
-func CryptopiaGetMarketsData() ([]CryptopiaMarket, error) {
+func CryptopiaGetMarketsData(httpClient *http.Client) ([]CryptopiaMarket, error) {
 	var parsed CryptopiaMarketsResponse
 
 	resp, reterr := httpClient.Get("https://cryptopia.co.nz/api/GetMarkets")
@@ -40,7 +26,7 @@ func CryptopiaGetMarketsData() ([]CryptopiaMarket, error) {
 	return parsed.Data, reterr
 }
 
-func CryptopiaGetMarketLogData(ticker string) (CryptopiaMarketLog, error) {
+func CryptopiaGetMarketLogData(httpClient *http.Client, ticker string) (CryptopiaMarketLog, error) {
 	var parsed CryptopiaMarketResponse
 
 
@@ -62,7 +48,7 @@ func CryptopiaGetMarketLogData(ticker string) (CryptopiaMarketLog, error) {
 	return parsed.Data, reterr
 }
 
-func CryptopiaGetMarketHistoryData(ticker string) ([]CryptopiaMarketHistory, error) {
+func CryptopiaGetMarketHistoryData(httpClient *http.Client, ticker string) ([]CryptopiaMarketHistory, error) {
 	var parsed CryptopiaMarketHistoryResponse
 
 	var ret []CryptopiaMarketHistory
@@ -90,7 +76,7 @@ func CryptopiaGetMarketHistoryData(ticker string) ([]CryptopiaMarketHistory, err
 	return ret, reterr
 }
 
-func CryptopiaGetMarketOrdersData(ticker string) ([]CryptopiaMarketOrder, error) {
+func CryptopiaGetMarketOrdersData(httpClient *http.Client, ticker string) ([]CryptopiaMarketOrder, error) {
 	var parsed CryptopiaMarketOrdersResponse
 
 	var ret []CryptopiaMarketOrder

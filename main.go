@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 	"sync"
+	"net/http"
+	"net"
 )
 
 
@@ -35,21 +37,19 @@ func Scanner(res *ScannerItem) {
 	for {
 		var tbegin = time.Now()
 
-		res.Mutex.RLock()
+		res.Mutex.Lock()
 		var label = res.Label
-		res.Mutex.RUnlock()
 
 		var tstamp = time.Now()
-		var tmpLogData, err1 = CryptopiaGetMarketLogData(label)
-		var tmpHistoryData, err2 = CryptopiaGetMarketHistoryData(label)
-		var tmpOrderData, err3 = CryptopiaGetMarketOrdersData(label)
+		var tmpLogData, err1 = CryptopiaGetMarketLogData(&res.HttpClient, label)
+		var tmpHistoryData, err2 = CryptopiaGetMarketHistoryData(&res.HttpClient, label)
+		var tmpOrderData, err3 = CryptopiaGetMarketOrdersData(&res.HttpClient, label)
 
 		tmpLogData.Time = tstamp
 		for i, _ := range tmpOrderData {
 			tmpOrderData[i].Time = tstamp
 		}
 
-		res.Mutex.Lock()
 		res.LogData = tmpLogData
 		res.HistoryData = tmpHistoryData
 		res.OrderData = tmpOrderData
@@ -91,6 +91,15 @@ func main() {
 	var thisRun time.Time
 	var tbegin time.Time
 
+	var netTransport = &http.Transport{
+		MaxIdleConns: 16000,
+		MaxIdleConnsPerHost: 8000,
+		Dial: (&net.Dialer{
+			Timeout: HTTPDialTimeout,
+		}).Dial,
+		TLSHandshakeTimeout: HTTPTLSTimeout,
+	}
+	var mainHttpClient = &http.Client{Timeout: HTTPClientTimeout, Transport: netTransport}
 	var scanners = make(map[string]*ScannerItem)
 
 	tbegin = time.Now()
@@ -108,7 +117,7 @@ func main() {
 
 	kkt("CryptopiaGetMarketsData()")
 	thisRun = time.Now()
-	marketData, err := CryptopiaGetMarketsData()
+	marketData, err := CryptopiaGetMarketsData(mainHttpClient)
 	printErr(err)
 
 	kkt("DBUpdateMarkets()")
@@ -123,7 +132,19 @@ func main() {
 		/*if ticker.Label != "HUSH/BTC" {
 			continue
 		}*/
-		scanners[ticker.Label] = &ScannerItem{thisRun, false,sync.RWMutex{}, ticker.Label, CryptopiaMarketLog{}, []CryptopiaMarketHistory{}, []CryptopiaMarketOrder{}}
+		scanners[ticker.Label] = &ScannerItem{
+			thisRun,
+			false,
+			sync.RWMutex{},
+			ticker.Label,
+			http.Client{
+					Timeout: HTTPClientTimeout,
+					Transport: netTransport,
+					},
+			CryptopiaMarketLog{},
+			[]CryptopiaMarketHistory{},
+			[]CryptopiaMarketOrder{},
+		}
 
 		time.Sleep(10 * time.Millisecond)
 		go Scanner(scanners[ticker.Label])

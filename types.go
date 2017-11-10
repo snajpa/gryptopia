@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 	"sync"
+	"net/http"
 )
 
 const MainSleep =			15 * time.Second
@@ -150,6 +151,7 @@ type ScannerItem struct {
 	LastFailed	bool
 	Mutex		sync.RWMutex
 	Label		string
+	HttpClient	http.Client
 	LogData 	CryptopiaMarketLog
 	HistoryData []CryptopiaMarketHistory
 	OrderData	[]CryptopiaMarketOrder
