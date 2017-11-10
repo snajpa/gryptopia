@@ -112,11 +112,13 @@ func CryptopiaGetMarketOrdersData(ticker string) ([]CryptopiaMarketOrder, error)
 
 	for _, i := range parsed.Data.Buy {
 		i.Type = "Buy"
+		kkt("pica Buy")
 		ret = append(ret, i)
 	}
 
 	for _, i := range parsed.Data.Sell {
 		i.Type = "Sell"
+		kkt("pica Sell")
 		ret = append(ret, i)
 	}
 
