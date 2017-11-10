@@ -3,27 +3,42 @@ package main
 import (
 	"github.com/go-pg/pg"
 	"time"
-	"fmt"
 )
 
-func DBcreateSchema(db *pg.DB) error {
+func DBCheckSchema(db *pg.DB) error {
 	var lasterr error
-	var respHT struct { Exists bool}
+	var respTmp struct { Exists bool}
 
-	for _, model := range []interface{}{&CryptopiaMarket{}, &CryptopiaMarketLog{}, &CryptopiaMarketHistory{}} {
-
-		err := db.CreateTable(model, nil)
-		if err != nil {
-			lasterr = err
-		}
+	db.QueryOne(&respTmp, "SELECT EXISTS(SELECT * FROM information_schema.tables WHERE table_name = 'cryptopia_markets')")
+	if !respTmp.Exists {
+		kkt("db.CreateTable(cryptopia_markets)")
+		db.CreateTable(&CryptopiaMarket{}, nil)
+		db.QueryOne(&respTmp, CryptopiaMarketIdxQuery)
 	}
 
-	db.QueryOne(&respHT, "SELECT create_hypertable('cryptopia_market_logs', 'time');")
-	db.QueryOne(&respHT, "SELECT create_hypertable('cryptopia_market_histories', 'time');")
+	db.QueryOne(&respTmp, "SELECT EXISTS(SELECT * FROM information_schema.tables WHERE table_name = 'cryptopia_market_logs')")
+	if !respTmp.Exists {
+		kkt("db.CreateTable(cryptopia_market_logs)")
+		db.CreateTable(&CryptopiaMarketLog{}, nil)
+		db.QueryOne(&respTmp, "SELECT create_hypertable('cryptopia_market_logs', 'time');")
+		db.QueryOne(&respTmp, CryptopiaMarketLogIdxQuery)
+	}
 
-	db.QueryOne(&respHT, CryptopiaMarketIdxQuery)
-	db.QueryOne(&respHT, CryptopiaMarketLogIdxQuery)
-	db.QueryOne(&respHT, CryptopiaMarketHistoryIdxQuery)
+	db.QueryOne(&respTmp, "SELECT EXISTS(SELECT * FROM information_schema.tables WHERE table_name = 'cryptopia_market_histories')")
+	if !respTmp.Exists {
+		kkt("db.CreateTable(cryptopia_market_histories)")
+		db.CreateTable(&CryptopiaMarketHistory{}, nil)
+		db.QueryOne(&respTmp, "SELECT create_hypertable('cryptopia_market_histories', 'time');")
+		db.QueryOne(&respTmp, CryptopiaMarketHistoryIdxQuery)
+	}
+
+	db.QueryOne(&respTmp, "SELECT EXISTS(SELECT * FROM information_schema.tables WHERE table_name = 'cryptopia_market_orders')")
+	if !respTmp.Exists {
+		kkt("db.CreateTable(cryptopia_market_orders)")
+		lasterr = db.CreateTable(&CryptopiaMarketOrder{}, nil)
+		db.QueryOne(&respTmp, "SELECT create_hypertable('cryptopia_market_orders', 'time');")
+		db.QueryOne(&respTmp, CryptopiaMarketOrdersIdxQuery)
+	}
 
 	return lasterr
 }
@@ -56,15 +71,6 @@ func DBUpdateMarkets(db *pg.DB, marketData *[]CryptopiaMarket, tstamp time.Time)
 	return nil
 }
 
-func DBInsertMarketLogs(db *pg.DB, log *[]CryptopiaMarketLog) error {
-	for _, i := range *log {
-			if i.Label == "ZEC/BTC" {
-				fmt.Printf("DBInsertMarketLogs pyco inserting <%v>\n", i)
-			}
-	}
-	return db.Insert(log)
-}
-
 func DBGetUniqMarkets(db *pg.DB) ([]struct{Label string}, error) {
 	var resp []struct {Label string}
 	var err error
@@ -74,15 +80,4 @@ func DBGetUniqMarkets(db *pg.DB) ([]struct{Label string}, error) {
 		Select(&resp)
 
 	return resp, err
-}
-
-
-func DBInsertMarketHistory(db *pg.DB, hist *[]CryptopiaMarketHistory) error {
-	var err error
-
-	for _, i := range *hist {
-		err = db.Insert(&i)
-	}
-
-	return err
 }

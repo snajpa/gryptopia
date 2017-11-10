@@ -112,11 +112,36 @@ const CryptopiaMarketHistoryIdxQuery string =
 	`CREATE INDEX cryptopia_market_histories_label_idx ON cryptopia_market_histories(label);
 	CREATE INDEX cryptopia_market_histories_type_idx ON cryptopia_market_histories(type);
 	CREATE UNIQUE INDEX cryptopia_market_histories_unique_idx ON
-		cryptopia_market_histories(trade_pair_id,timestamp,price,amount,type,time);`
+		cryptopia_market_histories(trade_pair_id,timestamp,price,amount,total,type,time);`
 
 func (h CryptopiaMarketHistory) String() string {
 	return fmt.Sprintf("CryptopiaMarketHistory<%s last %f @ %s>", h.Label, h.Price, h.Time)
 }
+
+type CryptopiaMarketOrdersResponse struct {
+	Success string
+	Message string
+	Data    struct {
+		Buy		[]CryptopiaMarketOrder
+		Sell	[]CryptopiaMarketOrder
+	}
+}
+
+type CryptopiaMarketOrder struct {
+	TradePairId		int
+	Label			string		`sql:"type:varchar(32)"`
+	Type			string		`sql:"type:varchar(8)"`
+	Price			float64
+	Total			float64
+	Time			time.Time
+}
+
+const CryptopiaMarketOrdersIdxQuery string =
+	`CREATE INDEX cryptopia_market_orders_label_idx ON cryptopia_market_orders(label);
+	CREATE INDEX cryptopia_market_orders_type_idx ON cryptopia_market_orders(type);
+	CREATE UNIQUE INDEX cryptopia_market_orders_unique_idx ON
+		cryptopia_market_orders(trade_pair_id,price,total,type,time);`
+
 
 type ScannerItem struct {
 	LastRun		time.Time
@@ -125,4 +150,5 @@ type ScannerItem struct {
 	Label		string
 	LogData 	CryptopiaMarketLog
 	HistoryData []CryptopiaMarketHistory
+	OrderData	[]CryptopiaMarketOrder
 }

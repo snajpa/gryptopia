@@ -92,8 +92,6 @@ func main() {
 	var lastRun time.Time
 	var tbegin time.Time
 
-	var respExist struct { Exists bool}
-
 	var scanners = make(map[string]*ScannerItem)
 
 	tbegin = time.Now()
@@ -105,13 +103,9 @@ func main() {
 		Database:              "test",
 	})
 
-	db.QueryOne(&respExist, "SELECT EXISTS(SELECT * FROM information_schema.tables WHERE table_name = 'cryptopia_markets')")
-
-	if !respExist.Exists {
-		kkt("DBcreateSchema()")
-		err = DBcreateSchema(db)
-		printErr(err)
-	}
+	kkt("DBCheckSchema()")
+	err = DBCheckSchema(db)
+	printErr(err)
 
 	kkt("CryptopiaGetMarketsData()")
 	lastRun = time.Now()
@@ -130,7 +124,7 @@ func main() {
 		/*if ticker.Label != "HUSH/BTC" {
 			continue
 		}*/
-		scanners[ticker.Label] = &ScannerItem{lastRun, false,sync.RWMutex{}, ticker.Label, CryptopiaMarketLog{}, []CryptopiaMarketHistory{}}
+		scanners[ticker.Label] = &ScannerItem{lastRun, false,sync.RWMutex{}, ticker.Label, CryptopiaMarketLog{}, []CryptopiaMarketHistory{}, []CryptopiaMarketOrder{}}
 
 		time.Sleep(10 * time.Millisecond)
 		go Scanner(scanners[ticker.Label])
@@ -143,6 +137,7 @@ func main() {
 	for {
 		var insertLogs []CryptopiaMarketLog
 		var insertHistories []CryptopiaMarketHistory
+		var insertOrders []CryptopiaMarketOrder
 		var failedTickers []string
 		var failedNum = 0
 		var upToDateCtr = 0
@@ -150,6 +145,7 @@ func main() {
 		lastEnd := lastRun
 		lastRun = time.Now()
 
+		kkt("===================== mainFor {")
 		for _, ticker := range uniqMarkets {
 			var tkr ScannerItem
 
@@ -164,6 +160,7 @@ func main() {
 				upToDateCtr++
 				insertLogs = append(insertLogs, tkr.LogData)
 				insertHistories = append(insertHistories, tkr.HistoryData...)
+				insertOrders = append(insertOrders, tkr.OrderData...)
 			}
 
 			if (tkr.LastFailed) {
@@ -175,8 +172,13 @@ func main() {
 		}
 
 		kkt("db.Insert()")
+
 		db.Insert(&insertLogs)
 		db.Model(&insertHistories).
+			OnConflict("DO NOTHING").
+			Insert()
+
+		db.Model(&insertOrders).
 			OnConflict("DO NOTHING").
 			Insert()
 
@@ -185,6 +187,7 @@ func main() {
 		fmt.Printf("log: upToDateCtr: %d\n", upToDateCtr)
 		fmt.Printf("log: Timecheck: %s, update took %s\n", time.Since(tbegin), lastRun.Sub(lastEnd))
 		sleepAtLeast(lastRun, MainSleep)
+		kkt("}")
 	}
 
 }
