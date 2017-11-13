@@ -171,16 +171,12 @@ func main() {
 		var failedNum = 0
 		var upToDateCtr = 0
 
-		var lastRun, thisRun time.Time
-
+		lastRun := thisRun
 		thisRun = time.Now()
-		
+
 		kkt("===================== mainFor {")
 		for _, ticker := range uniqMarkets {
 			var tkr ScannerItem
-
-			lastRun = thisRun
-			thisRun = time.Now()
 
 			/*if ticker.Label != "HUSH/BTC" {
 				continue
@@ -189,7 +185,7 @@ func main() {
 			tkr = *scanners[ticker.Label]
 
 			tkr.Mutex.Lock()
-			if (tkr.LastRun.After(lastRun)) {
+			if (tkr.LastRun.After(thisRun)) {
 				upToDateCtr++
 				insertLogs = append(insertLogs, tkr.LogData)
 				insertHistories = append(insertHistories, tkr.HistoryData...)
