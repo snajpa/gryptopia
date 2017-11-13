@@ -185,7 +185,7 @@ func main() {
 			tkr = *scanners[ticker.Label]
 
 			tkr.Mutex.Lock()
-			if (tkr.LastRun.After(thisRun)) {
+			if (thisRun.After(tkr.LastRun)) {
 				upToDateCtr++
 				insertLogs = append(insertLogs, tkr.LogData)
 				insertHistories = append(insertHistories, tkr.HistoryData...)
