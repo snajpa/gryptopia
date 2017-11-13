@@ -28,7 +28,7 @@ func DBCheckSchema(db *pg.DB) error {
 	if !respTmp.Exists {
 		kkt("db.CreateTable(cryptopia_market_histories)")
 		db.CreateTable(&CryptopiaMarketHistory{}, nil)
-		db.QueryOne(&respTmp, "SELECT create_hypertable('cryptopia_market_histories', 'time');")
+		db.QueryOne(&respTmp, "SELECT create_hypertable('cryptopia_market_histories', 'time', chunk_time_interval => interval '1 day');")
 		db.QueryOne(&respTmp, CryptopiaMarketHistoryIdxQuery)
 	}
 
@@ -36,7 +36,7 @@ func DBCheckSchema(db *pg.DB) error {
 	if !respTmp.Exists {
 		kkt("db.CreateTable(cryptopia_market_orders)")
 		lasterr = db.CreateTable(&CryptopiaMarketOrder{}, nil)
-		db.QueryOne(&respTmp, "SELECT create_hypertable('cryptopia_market_orders', 'time');")
+		db.QueryOne(&respTmp, "SELECT create_hypertable('cryptopia_market_orders', 'time', chunk_time_interval => interval '1 hour');")
 		db.QueryOne(&respTmp, CryptopiaMarketOrdersIdxQuery)
 	}
 
