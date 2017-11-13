@@ -7,8 +7,8 @@ import (
 	"net/http"
 )
 
-const MainSleep =			15 * time.Second
-const ScannerSleep =		14 * time.Second
+const MainSleep =			5 * time.Second
+const ScannerSleep =		15 * time.Second
 const HTTPDialTimeout = 	30 * time.Second
 const HTTPTLSTimeout = 		60 * time.Second
 const HTTPClientTimeout = 	90 * time.Second
