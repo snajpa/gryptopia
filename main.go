@@ -171,11 +171,15 @@ func main() {
 		var failedNum = 0
 		var upToDateCtr = 0
 
+		var lastRun, thisRun time.Time
+
+		thisRun = time.Now()
+		
 		kkt("===================== mainFor {")
 		for _, ticker := range uniqMarkets {
 			var tkr ScannerItem
 
-			lastRun := thisRun
+			lastRun = thisRun
 			thisRun = time.Now()
 
 			/*if ticker.Label != "HUSH/BTC" {
