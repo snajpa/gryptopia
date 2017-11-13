@@ -54,7 +54,7 @@ func Scanner(res *ScannerItem) {
 		}
 
 		tmpLogData.Time = tstamp
-		for i, _ := range tmpOrderData {
+		for i := range tmpOrderData {
 			tmpOrderData[i].Time = tstamp
 		}
 
@@ -106,6 +106,10 @@ func main() {
 	}
 	var mainHttpClient = &http.Client{Timeout: HTTPClientTimeout, Transport: netTransport}
 	var scanners = make(map[string]*ScannerItem)
+
+	var insertLogs []CryptopiaMarketLog
+	var insertHistories []CryptopiaMarketHistory
+	var insertOrders []CryptopiaMarketOrder
 
 	tbegin = time.Now()
 
@@ -164,9 +168,6 @@ func main() {
 	ScannersWait(thisRun, scanners)
 
 	for {
-		var insertLogs []CryptopiaMarketLog
-		var insertHistories []CryptopiaMarketHistory
-		var insertOrders []CryptopiaMarketOrder
 		var failedTickers []string
 		var failedNum = 0
 		var upToDateCtr = 0
@@ -184,12 +185,15 @@ func main() {
 
 			tkr = *scanners[ticker.Label]
 
-			tkr.Mutex.RLock()
+			tkr.Mutex.Lock()
 			if (tkr.LastRun.After(lastRun)) {
 				upToDateCtr++
 				insertLogs = append(insertLogs, tkr.LogData)
 				insertHistories = append(insertHistories, tkr.HistoryData...)
 				insertOrders = append(insertOrders, tkr.OrderData...)
+				tkr.LogData = CryptopiaMarketLog{}
+				tkr.HistoryData= []CryptopiaMarketHistory{}
+				tkr.OrderData = []CryptopiaMarketOrder{}
 			}
 
 			if (tkr.LastFailed) {
@@ -197,7 +201,7 @@ func main() {
 				failedTickers = append(failedTickers, ticker.Label)
 			}
 
-			tkr.Mutex.RUnlock()
+			tkr.Mutex.Unlock()
 		}
 
 		kkt("db.Insert()")
