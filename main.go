@@ -138,7 +138,7 @@ func main() {
 			scanners[ticker.Label].Mutex.Unlock()
 		}
 
-		fmt.Printf("log: db.Insert(Logs: %d, Histories: %d, Orders: %d)", len(insertLogs), len(insertHistories), len(insertOrders))
+		fmt.Printf("log: db.Insert(Logs: %d, Histories: %d, Orders: %d)\n", len(insertLogs), len(insertHistories), len(insertOrders))
 
 		db.Insert(&insertLogs)
 		db.Model(&insertHistories).
