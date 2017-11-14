@@ -75,9 +75,7 @@ func main() {
 	fmt.Printf("log: Creating %d scanners...\n", len(uniqMarkets))
 
 	for _, ticker := range uniqMarkets {
-		/*if ticker.Label != "HUSH/BTC" {
-			continue
-		}*/
+
 		scanners[ticker.Label] = &ScannerItem{
 			LastScan: thisRun,
 			LastSync: thisRun,
@@ -117,36 +115,30 @@ func main() {
 
 		kkt("===================== mainFor {")
 		for _, ticker := range uniqMarkets {
-			var tkr ScannerItem
 
-			/*if ticker.Label != "HUSH/BTC" {
-				continue
-			}*/
+			scanners[ticker.Label].Mutex.Lock()
 
-			tkr = *scanners[ticker.Label]
+			if (thisRun.After(scanners[ticker.Label].LastScan)) {
+				upToDateCtr += len(scanners[ticker.Label].LogData)
+				insertLogs = append(insertLogs, scanners[ticker.Label].LogData...)
+				insertHistories = append(insertHistories, scanners[ticker.Label].HistoryData...)
+				insertOrders = append(insertOrders, scanners[ticker.Label].OrderData...)
 
-			tkr.Mutex.Lock()
-			if (thisRun.After(tkr.LastScan)) {
-				upToDateCtr += len(tkr.LogData)
-				insertLogs = append(insertLogs, tkr.LogData...)
-				insertHistories = append(insertHistories, tkr.HistoryData...)
-				insertOrders = append(insertOrders, tkr.OrderData...)
-
-				tkr.LastSync = thisRun
-				tkr.LogData = nil
-				tkr.HistoryData = nil
-				tkr.OrderData = nil
+				scanners[ticker.Label].LastSync = thisRun
+				scanners[ticker.Label].LogData = nil
+				scanners[ticker.Label].HistoryData = nil
+				scanners[ticker.Label].OrderData = nil
 			}
 
-			if (tkr.LastFailed) {
+			if (scanners[ticker.Label].LastFailed) {
 				failedNum++
 				failedTickers = append(failedTickers, ticker.Label)
 			}
 
-			tkr.Mutex.Unlock()
+			scanners[ticker.Label].Mutex.Unlock()
 		}
 
-		kkt("db.Insert()")
+		fmt.Printf("log: db.Insert(Logs: %d, Histories: %d, Orders: %d)", len(insertLogs), len(insertHistories), len(insertOrders))
 
 		db.Insert(&insertLogs)
 		db.Model(&insertHistories).

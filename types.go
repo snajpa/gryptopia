@@ -38,6 +38,8 @@ type CryptopiaMarketResponse struct {
 	Data    CryptopiaMarketLog
 }
 
+type CryptopiaUniqMarket struct {Label string}
+
 type CryptopiaMarket struct {
 	Id             int			`json:"tradePairId"`
 	Label          string		`sql:"type:varchar(32)"`

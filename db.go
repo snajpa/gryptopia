@@ -12,7 +12,7 @@ func DBCheckSchema(db *pg.DB) error {
 	db.QueryOne(&respTmp, "SELECT EXISTS(SELECT * FROM information_schema.tables WHERE table_name = 'cryptopia_markets')")
 	if !respTmp.Exists {
 		db.QueryOne(&respTmp, "CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;")
-		
+
 		kkt("db.CreateTable(cryptopia_markets)")
 		db.CreateTable(&CryptopiaMarket{}, nil)
 		db.QueryOne(&respTmp, CryptopiaMarketIdxQuery)
@@ -73,9 +73,12 @@ func DBUpdateMarkets(db *pg.DB, marketData *[]CryptopiaMarket, tstamp time.Time)
 	return nil
 }
 
-func DBGetUniqMarkets(db *pg.DB) ([]struct{Label string}, error) {
-	var resp []struct {Label string}
+func DBGetUniqMarkets(db *pg.DB) ([]CryptopiaUniqMarket, error) {
+	var resp []CryptopiaUniqMarket
 	var err error
+
+	/*resp = append(resp, CryptopiaUniqMarket{"HUSH/BTC"})
+	return resp, err*/
 
 	err = db.Model(&CryptopiaMarket{}).
 		ColumnExpr("DISTINCT label").
