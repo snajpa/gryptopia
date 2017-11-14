@@ -21,7 +21,7 @@ func printErr(err error) {
 	}
 }
 
-func sleepAtLeast(torig time.Time, d time.Duration) {
+func SleepAtLeast(torig time.Time, d time.Duration) {
 	elapsed := time.Since(torig)
 
 	if (elapsed > d) {
@@ -29,65 +29,6 @@ func sleepAtLeast(torig time.Time, d time.Duration) {
 	}
 
 	time.Sleep(d - elapsed)
-}
-
-func Scanner(res *ScannerItem) {
-
-	res.Mutex.RLock()
-	var httpClient = &http.Client{Timeout: HTTPClientTimeout, Transport: &res.netTransport}
-	var label = res.Label
-	res.Mutex.RUnlock()
-
-	for {
-		var tbegin = time.Now()
-		var tstamp = time.Now()
-
-		var tmpLogData, err1 = CryptopiaGetMarketLogData(httpClient, label)
-		var tmpHistoryData, err2 = CryptopiaGetMarketHistoryData(httpClient, label)
-		var tmpOrderData, err3 = CryptopiaGetMarketOrdersData(httpClient, label)
-		var failed bool
-
-		if (err1 != nil) || (err2 != nil)  || (err3 != nil) {
-			failed = true
-		} else {
-			failed = false
-		}
-
-		tmpLogData.Time = tstamp
-		for i, _ := range tmpOrderData {
-			tmpOrderData[i].Time = tstamp
-		}
-
-		res.Mutex.Lock()
-
-		res.LogData = tmpLogData
-		res.HistoryData = tmpHistoryData
-		res.OrderData = tmpOrderData
-		res.LastRun = tstamp
-		res.LastFailed = failed
-
-		res.Mutex.Unlock()
-
-		sleepAtLeast(tbegin, ScannerSleep)
-
-	}
-
-
-}
-
-func ScannersWait(atleast time.Time, scanners map[string]*ScannerItem) {
-	var done = false
-
-	for _, v := range scanners {
-		//kkt("v.Mutex.RLock() "+v.Label)
-		for !done {
-			time.Sleep(10 * time.Millisecond)
-			v.Mutex.RLock()
-			done = v.LastRun.After(atleast)
-			v.Mutex.RUnlock()
-		}
-		//kkt("v.Mutex.RUnlock() "+v.Label)
-	}
 }
 
 func main() {
@@ -138,11 +79,11 @@ func main() {
 			continue
 		}*/
 		scanners[ticker.Label] = &ScannerItem{
-			thisRun,
-			false,
-			sync.RWMutex{},
-			ticker.Label,
-			http.Transport{
+			LastScan: thisRun,
+			LastSync: thisRun,
+			Mutex:    sync.RWMutex{},
+			Label:    ticker.Label,
+			netTransport: http.Transport{
 				MaxIdleConns: 16000,
 				MaxIdleConnsPerHost: 8000,
 				Dial: (&net.Dialer{
@@ -150,9 +91,9 @@ func main() {
 				}).Dial,
 				TLSHandshakeTimeout: HTTPTLSTimeout,
 			},
-			CryptopiaMarketLog{},
-			[]CryptopiaMarketHistory{},
-			[]CryptopiaMarketOrder{},
+			LogData:     nil,
+			HistoryData: nil,
+			OrderData:   nil,
 		}
 
 		time.Sleep(10 * time.Millisecond)
@@ -185,11 +126,16 @@ func main() {
 			tkr = *scanners[ticker.Label]
 
 			tkr.Mutex.Lock()
-			if (thisRun.After(tkr.LastRun)) {
-				upToDateCtr++
-				insertLogs = append(insertLogs, tkr.LogData)
+			if (thisRun.After(tkr.LastScan)) {
+				upToDateCtr += len(tkr.LogData)
+				insertLogs = append(insertLogs, tkr.LogData...)
 				insertHistories = append(insertHistories, tkr.HistoryData...)
 				insertOrders = append(insertOrders, tkr.OrderData...)
+
+				tkr.LastSync = thisRun
+				tkr.LogData = nil
+				tkr.HistoryData = nil
+				tkr.OrderData = nil
 			}
 
 			if (tkr.LastFailed) {
@@ -215,7 +161,7 @@ func main() {
 		fmt.Printf("log: FialCount: %v\n", failedNum)
 		fmt.Printf("log: upToDateCtr: %d\n", upToDateCtr)
 		fmt.Printf("log: Timecheck: %s, update took %s\n", time.Since(tbegin), thisRun.Sub(lastRun))
-		sleepAtLeast(thisRun, MainSleep)
+		SleepAtLeast(thisRun, SyncerSleep)
 		kkt("}")
 	}
 
