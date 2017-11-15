@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"time"
 	"github.com/go-pg/pg"
-	"fmt"
 )
 
 func Scanner(res *ScannerItem) {
