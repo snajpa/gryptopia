@@ -37,6 +37,7 @@ func Scanner(res *ScannerItem) {
 		tmpLogData.Time = tbegin
 		for i, _ := range tmpOrderData {
 			tmpOrderData[i].Time = tbegin
+			tmpOrderData[i].CryptopiaMarketId = tmpLogData.CryptopiaMarketId
 		}
 
 		tsync := time.Now()
