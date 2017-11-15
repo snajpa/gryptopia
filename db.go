@@ -38,8 +38,8 @@ func DBCheckSchema(db *pg.DB) error {
 	if !respTmp.Exists {
 		kkt("db.CreateTable(cryptopia_market_orders)")
 		lasterr = db.CreateTable(&CryptopiaMarketOrder{}, nil)
-		db.QueryOne(&respTmp, "SELECT create_hypertable('cryptopia_market_orders', 'time', 3);")
-		db.QueryOne(&respTmp, "SELECT add_dimension('cryptopia_market_orders', 'cryptopia_market_id', number_partitions => 2048);")
+		db.QueryOne(&respTmp, "SELECT create_hypertable('cryptopia_market_orders', 'time');")
+		db.QueryOne(&respTmp, "SELECT add_dimension('cryptopia_market_orders', 'cryptopia_market_id', number_partitions => 32);")
 		db.QueryOne(&respTmp, "SELECT add_dimension('cryptopia_market_orders', 'buy', interval_length => 86400000000);")
 		db.QueryOne(&respTmp, "SELECT add_dimension('cryptopia_market_orders', 'sell', interval_length => 86400000000);")
 		db.QueryOne(&respTmp, CryptopiaMarketOrdersIdxQuery)
