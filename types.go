@@ -111,7 +111,7 @@ type CryptopiaMarketHistory struct {
 	Time              time.Time
 }
 
-const CryptopiaMarketHistoryIdxQuery string = ``
+const CryptopiaMarketHistoryIdxQuery string = `CREATE UNIQUE INDEX cryptopia_market_histories_unique_idx ON cryptopia_market_histories(cryptopia_market_id,sell,buy,price,amount,total,timestamp,time);`
 
 func (h CryptopiaMarketHistory) String() string {
 	return fmt.Sprintf("CryptopiaMarketHistory<%s last %f @ %s>", h.CryptopiaMarket.Label, h.Price, h.Time)
@@ -140,7 +140,7 @@ type CryptopiaMarketOrder struct {
 	return fmt.Sprintf("CryptopiaMarketOrder<%d price %f total %f @ %s>", h.CryptopiaMarketId, h.Price, h.Total, h.Time)
 }*/
 
-const CryptopiaMarketOrdersIdxQuery string = ``
+const CryptopiaMarketOrdersIdxQuery string = `CREATE UNIQUE INDEX cryptopia_market_orders_unique_idx ON cryptopia_market_orders(cryptopia_market_id,sell,buy,price,total,time);`
 
 type ScannerItem struct {
 	LastScan       time.Time
