@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 	"fmt"
+	"strconv"
 )
 
 func CryptopiaGetMarketsData(httpClient *http.Client) ([]CryptopiaMarket, error) {
@@ -77,21 +78,18 @@ func CryptopiaGetMarketHistoryData(httpClient *http.Client, ticker string) ([]Cr
 	return ret, reterr
 }
 
-func CryptopiaGetMarketOrdersData(httpClient *http.Client, ticker string) ([]CryptopiaMarketOrder, error) {
+func CryptopiaGetMarketOrdersData(httpClient *http.Client, tickerId int) ([]CryptopiaMarketOrder, error) {
 	var parsed CryptopiaMarketOrdersResponse
 
 	var ret []CryptopiaMarketOrder
-
-	var ticker_uscore = strings.Replace(ticker, "/", "_", -1)
-
-	resp, reterr := httpClient.Get("https://cryptopia.co.nz/api/GetMarketOrders/"+ticker_uscore)
+	resp, reterr := httpClient.Get("https://cryptopia.co.nz/api/GetMarketOrders/"+strconv.Itoa(tickerId))
 
 	if resp != nil {
 		defer resp.Body.Close()
 	}
 
 	if (reterr != nil) || (resp.StatusCode != 200) {
-		fmt.Printf("err: failed http.Get(https://cryptopia.co.nz/api/GetMarketOrders/%s) resp <%v> err <%v>\n", ticker_uscore, resp, reterr)
+		fmt.Printf("err: failed http.Get(https://cryptopia.co.nz/api/GetMarketOrders/%d) resp <%v> err <%v>\n", tickerId, resp, reterr)
 		return []CryptopiaMarketOrder{}, reterr
 	}
 
@@ -101,6 +99,7 @@ func CryptopiaGetMarketOrdersData(httpClient *http.Client, ticker string) ([]Cry
 		i.Type = "Buy"
 		i.IsSell = false
 		ret = append(ret, i)
+
 	}
 
 	for _, i := range parsed.Data.Sell {

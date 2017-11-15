@@ -25,7 +25,7 @@ func Scanner(res *ScannerItem) {
 
 		var tmpLogData, err1 = CryptopiaGetMarketLogData(httpClient, label)
 		var tmpHistoryData, err2 = CryptopiaGetMarketHistoryData(httpClient, label)
-		var tmpOrderData, err3 = CryptopiaGetMarketOrdersData(httpClient, label)
+		var tmpOrderData, err3 = CryptopiaGetMarketOrdersData(httpClient, tmpLogData.CryptopiaMarketId)
 		var failed bool
 
 		if (err1 != nil) || (err2 != nil)  || (err3 != nil) {
@@ -38,6 +38,8 @@ func Scanner(res *ScannerItem) {
 		for i, _ := range tmpOrderData {
 			tmpOrderData[i].Time = tbegin
 			tmpOrderData[i].CryptopiaMarketId = tmpLogData.CryptopiaMarketId
+			tmpOrderData[i].CryptopiaMarket = tmpLogData.CryptopiaMarket
+
 		}
 
 		tsync := time.Now()
