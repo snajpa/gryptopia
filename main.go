@@ -109,13 +109,13 @@ func main() {
 	for {
 		var tickerCnt = len(scanners)
 
-		var failCnt, upToDateCtr, okCnt int
+		var failCtr, upToDateCtr, okCtr int
 		var scanTot, scanAvg, syncTot, syncAvg time.Duration
 		var thisRun time.Time
 
-		failCnt = 0
+		failCtr = 0
 		upToDateCtr = 0
-		okCnt = 0
+		okCtr = 0
 		thisRun = time.Now()
 
 		for _, t := range uniqMarkets {
@@ -131,9 +131,9 @@ func main() {
 			if (lastOK) {
 				scanTot += lastScanTook
 				syncTot += lastSyncTook
-				okCnt++
+				okCtr++
 			} else {
-				failCnt++
+				failCtr++
 			}
 
 			if lastOK && lastFinish.After(thisRun.Add(-ScannerSleep)) {
@@ -141,17 +141,18 @@ func main() {
 			}
 		}
 
-		scanAvg = time.Duration(int64(scanTot / time.Nanosecond) / int64(okCnt)) * time.Nanosecond
-		syncAvg = time.Duration(int64(syncTot / time.Nanosecond) / int64(okCnt)) * time.Nanosecond
+		scanAvg = time.Duration(int64(scanTot / time.Nanosecond) / int64(okCtr)) * time.Nanosecond
+		syncAvg = time.Duration(int64(syncTot / time.Nanosecond) / int64(okCtr)) * time.Nanosecond
 
-		fmt.Printf("log: failCnt: %d\n", failCnt)
+		fmt.Printf("log: okCtr: %d\n", okCtr)
+		fmt.Printf("log: failCtr: %d\n", failCtr)
 		fmt.Printf("log: upToDateCtr: %d\n", upToDateCtr)
 		fmt.Printf("log: scanAvg: %s\n", scanAvg)
 		fmt.Printf("log: syncAvg: %s\n", syncAvg)
 
 		fmt.Printf("log: Timecheck: %s\n", time.Since(tbegin))
 		SleepAtLeast(thisRun, StatusSleep)
-		kkt("}")
+		kkt(" ")
 	}
 
 }
