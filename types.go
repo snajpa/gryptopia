@@ -126,8 +126,8 @@ type CryptopiaMarketOrdersResponse struct {
 }
 
 type CryptopiaMarketOrder struct {
-	TradePairId int
-	Label       string `sql:"type:varchar(32)"`
+	CryptopiaMarketId int `json:"tradePairId"`
+	CryptopiaMarket   *CryptopiaMarket
 	Type        string  `sql:"-"`
 	IsSell		bool
 	Price       float64
@@ -136,7 +136,7 @@ type CryptopiaMarketOrder struct {
 }
 
 func (h CryptopiaMarketOrder) String() string {
-	return fmt.Sprintf("CryptopiaMarketOrder<%s price %f total %f @ %s>", h.Label, h.Price, h.Total, h.Time)
+	return fmt.Sprintf("CryptopiaMarketOrder<%s price %f total %f @ %s>", h.CryptopiaMarket.Label, h.Price, h.Total, h.Time)
 }
 
 const CryptopiaMarketOrdersIdxQuery string = `CREATE INDEX cryptopia_market_orders_label_idx ON cryptopia_market_orders(label);
