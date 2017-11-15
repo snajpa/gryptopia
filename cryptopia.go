@@ -71,7 +71,8 @@ func CryptopiaGetMarketHistoryData(httpClient *http.Client, ticker string) ([]Cr
 
 	for _, i := range parsed.Data {
 		i.Time = time.Unix(i.Timestamp, 0)
-		i.IsSell = (i.Type == "Sell")
+		i.Sell = (i.Type == "Sell")
+		i.Buy = (i.Type == "Buy")
 		ret = append(ret, i)
 	}
 
@@ -97,14 +98,15 @@ func CryptopiaGetMarketOrdersData(httpClient *http.Client, tickerId int) ([]Cryp
 
 	for _, i := range parsed.Data.Buy {
 		i.Type = "Buy"
-		i.IsSell = false
+		i.Buy = true
+		i.CryptopiaMarketId = tickerId
 		ret = append(ret, i)
-
 	}
 
 	for _, i := range parsed.Data.Sell {
 		i.Type = "Sell"
-		i.IsSell = true
+		i.Sell = true
+		i.CryptopiaMarketId = tickerId
 		ret = append(ret, i)
 	}
 

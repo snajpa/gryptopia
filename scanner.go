@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 	"github.com/go-pg/pg"
+	"fmt"
 )
 
 func Scanner(res *ScannerItem) {
@@ -37,9 +38,9 @@ func Scanner(res *ScannerItem) {
 		tmpLogData.Time = tbegin
 		for i, _ := range tmpOrderData {
 			tmpOrderData[i].Time = tbegin
-			tmpOrderData[i].CryptopiaMarketId = tmpLogData.CryptopiaMarketId
-			tmpOrderData[i].CryptopiaMarket = tmpLogData.CryptopiaMarket
+			fmt.Printf("log: i: %v\n", tmpOrderData[i])
 
+			tmpOrderData[i].CryptopiaMarketId = tmpLogData.CryptopiaMarketId
 		}
 
 		tsync := time.Now()

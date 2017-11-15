@@ -102,7 +102,8 @@ type CryptopiaMarketHistory struct {
 	CryptopiaMarketId int `json:"tradePairId"`
 	CryptopiaMarket   *CryptopiaMarket
 	Type              string `sql:"-"`
-	IsSell            bool
+	Sell            bool
+	Buy            bool
 	Price             float64
 	Amount            float64
 	Total             float64
@@ -127,17 +128,17 @@ type CryptopiaMarketOrdersResponse struct {
 
 type CryptopiaMarketOrder struct {
 	CryptopiaMarketId int `json:"tradePairId"`
-	CryptopiaMarket   *CryptopiaMarket
 	Type              string `sql:"-"`
-	IsSell            bool
+	Sell            bool
+	Buy            bool
 	Price             float64
 	Total             float64
 	Time              time.Time
 }
 
-func (h CryptopiaMarketOrder) String() string {
-	return fmt.Sprintf("CryptopiaMarketOrder<%s price %f total %f @ %s>", h.CryptopiaMarket.Label, h.Price, h.Total, h.Time)
-}
+/*func (h CryptopiaMarketOrder) String() string {
+	return fmt.Sprintf("CryptopiaMarketOrder<%d price %f total %f @ %s>", h.CryptopiaMarketId, h.Price, h.Total, h.Time)
+}*/
 
 const CryptopiaMarketOrdersIdxQuery string = ``
 
