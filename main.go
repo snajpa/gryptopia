@@ -136,7 +136,7 @@ func main() {
 				failCnt++
 			}
 
-			if lastFinish.After(thisRun.Add(-ScannerSleep)){
+			if lastOK && lastFinish.After(thisRun.Add(-ScannerSleep)) {
 				upToDateCtr++
 			}
 		}
