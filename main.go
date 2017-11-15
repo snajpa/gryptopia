@@ -77,21 +77,25 @@ func main() {
 	for _, ticker := range uniqMarkets {
 
 		scanners[ticker.Label] = &ScannerItem{
-			LastScan: thisRun,
-			LastSync: thisRun,
-			Mutex:    sync.RWMutex{},
-			Label:    ticker.Label,
-			netTransport: http.Transport{
-				MaxIdleConns: 16000,
+			thisRun,
+			thisRun,
+			thisRun,
+			false,
+			0,
+			0,
+			sync.RWMutex{},
+			ticker.Label,
+			http.Transport{
+				MaxIdleConns:        16000,
 				MaxIdleConnsPerHost: 8000,
 				Dial: (&net.Dialer{
 					Timeout: HTTPDialTimeout,
 				}).Dial,
 				TLSHandshakeTimeout: HTTPTLSTimeout,
 			},
-			LogData:     nil,
-			HistoryData: nil,
-			OrderData:   nil,
+			CryptopiaMarketLog{},
+			0,
+			0,
 		}
 
 		time.Sleep(10 * time.Millisecond)
@@ -103,57 +107,50 @@ func main() {
 	ScannersWait(thisRun, scanners)
 
 	for {
-		var insertLogs []CryptopiaMarketLog
-		var insertHistories []CryptopiaMarketHistory
-		var insertOrders []CryptopiaMarketOrder
-		var failedTickers []string
-		var failedNum = 0
-		var upToDateCtr = 0
+		var tickerCnt = len(scanners)
 
-		lastRun := thisRun
+		var failCnt, upToDateCtr, okCnt int
+		var scanTot, scanAvg, syncTot, syncAvg time.Duration
+		var thisRun time.Time
+
+		failCnt = 0
+		upToDateCtr = 0
+		okCnt = 0
 		thisRun = time.Now()
 
-		kkt("===================== mainFor {")
-		for _, ticker := range uniqMarkets {
+		for _, t := range uniqMarkets {
+			tickerCnt++
 
-			scanners[ticker.Label].Mutex.Lock()
+			scanners[t.Label].Mutex.RLock()
+			lastScanTook 	:= scanners[t.Label].LastScanTook
+			lastSyncTook 	:= scanners[t.Label].LastSyncTook
+			lastFinish 		:= scanners[t.Label].LastFinish
+			lastOK 			:= scanners[t.Label].LastOK
+			scanners[t.Label].Mutex.RUnlock()
 
-			if (thisRun.After(scanners[ticker.Label].LastScan)) {
-				upToDateCtr += len(scanners[ticker.Label].LogData)
-				insertLogs = append(insertLogs, scanners[ticker.Label].LogData...)
-				insertHistories = append(insertHistories, scanners[ticker.Label].HistoryData...)
-				insertOrders = append(insertOrders, scanners[ticker.Label].OrderData...)
-
-				scanners[ticker.Label].LastSync = thisRun
-				scanners[ticker.Label].LogData = nil
-				scanners[ticker.Label].HistoryData = nil
-				scanners[ticker.Label].OrderData = nil
+			if (lastOK) {
+				scanTot += lastScanTook
+				syncTot += lastSyncTook
+				okCnt++
+			} else {
+				failCnt++
 			}
 
-			if (scanners[ticker.Label].LastFailed) {
-				failedNum++
-				failedTickers = append(failedTickers, ticker.Label)
+			if lastFinish.After(thisRun.Add(-ScannerSleep)){
+				upToDateCtr++
 			}
-
-			scanners[ticker.Label].Mutex.Unlock()
 		}
 
-		fmt.Printf("log: db.Insert(Logs: %d, Histories: %d, Orders: %d)\n", len(insertLogs), len(insertHistories), len(insertOrders))
+		scanAvg = time.Duration(int64(scanTot / time.Nanosecond) / int64(okCnt)) * time.Nanosecond
+		syncAvg = time.Duration(int64(syncTot / time.Nanosecond) / int64(okCnt)) * time.Nanosecond
 
-		db.Insert(&insertLogs)
-		db.Model(&insertHistories).
-			OnConflict("DO NOTHING").
-			Insert()
-
-		db.Model(&insertOrders).
-			OnConflict("DO NOTHING").
-			Insert()
-
-		fmt.Printf("log: Fials: %v\n", failedTickers)
-		fmt.Printf("log: FialCount: %v\n", failedNum)
+		fmt.Printf("log: failCnt: %d\n", failCnt)
 		fmt.Printf("log: upToDateCtr: %d\n", upToDateCtr)
-		fmt.Printf("log: Timecheck: %s, update took %s\n", time.Since(tbegin), thisRun.Sub(lastRun))
-		SleepAtLeast(thisRun, SyncerSleep)
+		fmt.Printf("log: scanAvg: %s\n", scanAvg)
+		fmt.Printf("log: syncAvg: %s\n", syncAvg)
+
+		fmt.Printf("log: Timecheck: %s\n", time.Since(tbegin))
+		SleepAtLeast(thisRun, StatusSleep)
 		kkt("}")
 	}
 

@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-const SyncerSleep =			30 * time.Second
+const StatusSleep =			5  * time.Second
 const ScannerSleep =		30 * time.Second
 const HTTPDialTimeout = 	30 * time.Second
 const HTTPTLSTimeout = 		60 * time.Second
@@ -149,11 +149,14 @@ const CryptopiaMarketOrdersIdxQuery string =
 type ScannerItem struct {
 	LastScan    	time.Time
 	LastSync		time.Time
-	LastFailed		bool
+	LastFinish		time.Time
+	LastOK			bool
+	LastScanTook	time.Duration
+	LastSyncTook	time.Duration
 	Mutex			sync.RWMutex
 	Label			string
-	netTransport	http.Transport
-	LogData			[]CryptopiaMarketLog
-	HistoryData		[]CryptopiaMarketHistory
-	OrderData		[]CryptopiaMarketOrder
+	NetTransport	http.Transport
+	LogDataLen		CryptopiaMarketLog
+	HistoryDataLen	int
+	OrderDataLen	int
 }
