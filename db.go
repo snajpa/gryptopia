@@ -77,8 +77,8 @@ func DBGetUniqMarkets(db *pg.DB) ([]CryptopiaUniqMarket, error) {
 	var resp []CryptopiaUniqMarket
 	var err error
 
-	resp = append(resp, CryptopiaUniqMarket{"HUSH/BTC"})
-	return resp, err
+	/*resp = append(resp, CryptopiaUniqMarket{"HUSH/BTC"})
+	return resp, err*/
 
 	err = db.Model(&CryptopiaMarket{}).
 		ColumnExpr("DISTINCT label").
